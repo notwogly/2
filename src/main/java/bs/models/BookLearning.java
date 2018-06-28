@@ -16,7 +16,16 @@ public class BookLearning {
     private String bookName;
     private String bookIntro;
 
-    public BookLearning(){}
+    public BookLearning(){
+        this.totalNum = 0;
+        this.mastered = 0;
+        this.newVocab = 0;
+        this.dailyNum = 0;
+        this.learning = 0;
+        this.bookName = "无正在学习的书籍";
+        this.bookIntro = "请先设置要学习的书籍";
+    }
+
     public BookLearning(@NotNull BookLearningEntity bookLearningEntity){
         id = bookLearningEntity.getId();
         totalNum = bookLearningEntity.getTotalNum();

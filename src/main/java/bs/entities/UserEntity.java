@@ -84,7 +84,10 @@ public class UserEntity {
 
     public int getRecordDay(){return recordDay;}
     public void setRecordDay(int recordDay){ this.recordDay = recordDay;}
-    public void addRecordDay(){ recordDay = recordDay+1;}
+    public void sebRecordDay(){
+        recordDay--;
+    }
+    public void addRecordDay(){ recordDay++;}
 
     public List<BookLearningEntity> getBookLearnings() {
         return bookLearnings;

@@ -35,6 +35,10 @@ public class BookLearningEntity {
         this.learning = 0;
         this.newVocab = newVocab;
         this.learned = true;
+        this.dailyNum = 20;
+        if( 20 > this.totalNum || 20> this.newVocab)
+            this.dailyNum = (this.totalNum>this.newVocab)?this.newVocab:this.totalNum;
+        System.out.println(this.dailyNum);
     }
 
     public Integer getId() {
@@ -116,6 +120,11 @@ public class BookLearningEntity {
     }
     public void setDailyNum(long dailyNum) {
         this.dailyNum = dailyNum;
+    }
+    public void updateDailyNum(){
+        if( this.dailyNum > this.totalNum || this.dailyNum> this.newVocab)
+            this.dailyNum = (this.totalNum>this.newVocab)?this.newVocab:this.totalNum;
+
     }
 
     public UserEntity getUserEntity() {

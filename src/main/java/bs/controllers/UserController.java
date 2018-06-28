@@ -62,13 +62,13 @@ public class UserController {
     //用户注册
     @PostMapping("/register")
     @ResponseStatus(value = HttpStatus.CREATED)
-    public String userRegister(@RequestBody UserRegistered  u){
+    public boolean userRegister(@RequestBody UserRegistered  u){
         UserEntity userEntity = null;
         try {
             userEntity = userRepository.findByEmail(u.getEmail());
         }catch (Exception e){}
         if(userEntity != null)
-            return "该邮箱已经被注册";
+            return false;
 
         PasswordHash p = new PasswordHash();
         String salt = p.getSalt();
@@ -76,26 +76,29 @@ public class UserController {
         userEntity = new UserEntity(u.getEmail(), hashedPwd, salt);
         userRepository.save(userEntity);
 
-        return "注册成功";
+        return true;
     }
 
     //用户登陆
     @PostMapping("/login")
     @ResponseStatus(value = HttpStatus.CREATED)
-    public String userLogin(@RequestBody UserRegistered  u){
+    public User userLogin(@RequestBody UserRegistered  u){
+//        System.out.println(u.getEmail());
+//        System.out.println(u.getPwd());
         UserEntity userEntity = null;
         try {
             userEntity = userRepository.findByEmail(u.getEmail());
         }catch (Exception e){}
         if(userEntity == null)
-            return "用户不存在";
+            return null;
         PasswordHash p = new PasswordHash();
         String salt = userEntity.getSalt();
         String hashedPwd = p.getHashedPassword(u.getPwd(),salt);
+        userBeginLearning(userEntity.getId());
         if(hashedPwd.equals(userEntity.getHashedPassword()))
-            return "登陆成功";
+            return new User(userEntity);
         else
-            return "密码错误";
+            return null;
     }
 
     //获取用户信息
@@ -217,12 +220,10 @@ public class UserController {
         }catch (Exception e){}
         if(userEntity == null)
             return null;
-        userEntity.addRecordDay();
-        userRepository.save(userEntity);
-        Calendar date = Calendar.getInstance();
         BookLearning bookLearning = getBook(userId);
         if(bookLearning == null)
             return null;
+        Calendar date = Calendar.getInstance();
         List<UserDailyLearningEntity> userDailyLearningEntityList = null;
         try{
             userDailyLearningEntityList = userDailyLearningRepository.findByUser(userEntity);
@@ -235,8 +236,39 @@ public class UserController {
                 return new UserDailyLearning(userDailyLearningEntity);
             }
         }
+        //不存在今天的学习情况记录
+        //System.out.println("不存在今天的学习情况记录");
+        userEntity.addRecordDay();
+        userRepository.save(userEntity);
         UserDailyLearningEntity userDailyLearningEntity = new UserDailyLearningEntity(userEntity,bookLearning.getDailyNum(),date);
         userDailyLearningRepository.save(userDailyLearningEntity);
+        long newVocab = userDailyLearningEntity.getNewVocab();
+//        if( newVocab == 0)
+//            return null;
+        UserVocabsEntity userVocabsEntity = null;
+        try{
+            userVocabsEntity = userVocabsRepository.findByTypeAndUser(2,userEntity);
+        }catch (Exception e){}
+        UserVocabsEntity userVocabsEntity1 = null;
+        try{
+            userVocabsEntity1 = userVocabsRepository.findByTypeAndUser(1,userEntity);
+        }catch (Exception e){}
+        List<VocabEntity> vocabEntityList = userVocabsEntity.getVocabs();
+        userVocabsEntity1.getVocabs().clear();
+        if(vocabEntityList.size() == 0)
+            return null;
+        List<VocabEntity> vocabEntityList1 = userVocabsEntity1.getVocabs();
+        vocabEntityList1.clear();
+        if(newVocab > vocabEntityList.size())
+            newVocab = vocabEntityList.size();
+        for(int i = 0; i< newVocab; i++)
+        {
+            VocabEntity vocabEntity = vocabEntityList.get(i);
+            vocabEntityList1.add(vocabEntity);
+        }
+        userVocabsRepository.save(userVocabsEntity);
+        userVocabsRepository.save(userVocabsEntity1);
+
         return new UserDailyLearning(userDailyLearningEntity);
     }
 
@@ -257,7 +289,7 @@ public class UserController {
             userDailyLearningEntityList = userDailyLearningRepository.findByUser(userEntity);
         }catch (Exception e){}
         if(userDailyLearningEntityList == null)
-            return  null;
+            return new UserDailyLearning();
         UserDailyLearningEntity userDailyLearningEntity = null;
         for(UserDailyLearningEntity userDailyLearningEntity1: userDailyLearningEntityList) {
             if ((now.get(Calendar.YEAR) == userDailyLearningEntity1.getToday().get(Calendar.YEAR)) && (now.get(Calendar.MONTH) == userDailyLearningEntity1.getToday().get(Calendar.MONTH))
@@ -288,27 +320,15 @@ public class UserController {
         }catch (Exception e){}
         if(bookEntity == null)
             return  null;
-        List<BookLearningEntity> bookLearningEntityList = null;
-        try{
-            bookLearningEntityList = bookLearningRepository.findByUser(userEntity);
-        }catch (Exception e){}
-
         //将书的所有单词添加到用户的newVocabs单词库中
-        //删除用户的type = 2的单词库
+        //清空用户的type = 2的单词库
         UserVocabsEntity userVocabsEntity = null;
-        try{
-            userVocabsEntity = userVocabsRepository.findByTypeAndUser(2,userEntity);
-            Integer id = userVocabsEntity.getId();
-            userVocabsRepository.deleteById(id);
-        }catch (Exception e){}
-        userEntity.addUserVocabs(new UserVocabsEntity(2,userEntity));
-        userRepository.save(userEntity);
-        userVocabsEntity = null;
         try{
             userVocabsEntity = userVocabsRepository.findByTypeAndUser(2,userEntity);
         }catch (Exception e){}
         if(userVocabsEntity == null)
             return null;
+        userVocabsEntity.getVocabs().clear();
         List<VocabEntity> userVocabEntityList = userVocabsEntity.getVocabs();
         List<VocabEntity> bookVocabEntityList = bookEntity.getVocabs();
         for(VocabEntity vocabEntity: bookVocabEntityList)
@@ -319,7 +339,35 @@ public class UserController {
                 userVocabEntityList.add(vocabEntity);
         }
         userVocabsRepository.save(userVocabsEntity);
+        //删除当前的本日的学习记录并添加新的
+        Calendar now = Calendar.getInstance();
+        List<UserDailyLearningEntity> userDailyLearningEntityList = null;
+        try{
+            userDailyLearningEntityList = userDailyLearningRepository.findByUser(userEntity);
+        }catch (Exception e){}
+        if(userDailyLearningEntityList == null)
+            return null;
+        UserDailyLearningEntity userDailyLearningEntity = null;
+        for(UserDailyLearningEntity userDailyLearningEntity1: userDailyLearningEntityList) {
+            if ((now.get(Calendar.YEAR) == userDailyLearningEntity1.getToday().get(Calendar.YEAR)) && (now.get(Calendar.MONTH) == userDailyLearningEntity1.getToday().get(Calendar.MONTH))
+                    && (now.get(Calendar.DAY_OF_MONTH) == userDailyLearningEntity1.getToday().get(Calendar.DAY_OF_MONTH))) {
+                userDailyLearningEntity = userDailyLearningEntity1;
+                break;
+            }
+        }
+        if(userDailyLearningEntity != null)
+        {
+            try{
+                userDailyLearningRepository.deleteById(userDailyLearningEntity.getId());
+            }catch (Exception e){}
+            userEntity.sebRecordDay();
+            userRepository.save(userEntity);
+        }
         //是否已经添加在list中但是不是当前正在学习
+        List<BookLearningEntity> bookLearningEntityList = null;
+        try{
+            bookLearningEntityList = bookLearningRepository.findByUser(userEntity);
+        }catch (Exception e){}
         boolean flag = false;
         for(BookLearningEntity bookLearningEntity: bookLearningEntityList)
         {
@@ -327,6 +375,7 @@ public class UserController {
             {
                 bookLearningEntity.setLearned(true);
                 bookLearningEntity.setNewVocab((long)userVocabEntityList.size());
+                bookLearningEntity.updateDailyNum();
                 flag = true;
                 bookLearningRepository.save(bookLearningEntity);
             }else if(bookLearningEntity.isLearned() == true && bookLearningEntity.getBookEntity().getId() != bookEntity.getId())
@@ -339,6 +388,10 @@ public class UserController {
         {
             BookLearningEntity bookLearningEntity = new BookLearningEntity(userEntity,bookEntity,(long)userVocabEntityList.size());
             bookLearningRepository.save(bookLearningEntity);
+        }
+        if(userDailyLearningEntity!= null)
+        {
+            userBeginLearning(userId);
         }
 
         return new Book(bookEntity);
@@ -392,17 +445,9 @@ public class UserController {
             bookLearningEntity = bookLearningRepository.findByUserAndLearned(userEntity,true);
         }catch (Exception e){}
         if(bookLearningEntity == null)
-            return null;
+            return new BookLearning();
 
         return new BookLearning(bookLearningEntity);
-//        List<BookLearningEntity>bookLearningEntities = userEntity.getBookLearnings();
-//        BookLearning bookLearning = null;
-//        for(BookLearningEntity bookLearningEntity: bookLearningEntities)
-//        {
-//            if(bookLearningEntity.isLearned() == true)
-//                bookLearning = new BookLearning(bookLearningEntity);
-//        }
-//        return bookLearning;
     }
 
     //用户获取词库中的单词
@@ -481,7 +526,9 @@ public class UserController {
     @ResponseStatus(value = HttpStatus.OK)
     public Vocab getVocabDetail(@PathVariable Integer userId){
         UserDailyLearning userDailyLearning = getDailyLearning(userId);
-        if(userDailyLearning.getNewVocab() == 0)
+        if(userDailyLearning == null)
+            return null;
+        else if(userDailyLearning.getNewVocab() == 0)
             return null;
 
         UserEntity userEntity = null;
@@ -532,6 +579,7 @@ public class UserController {
             if(vocabEntity1.getId() == vocabEntity.getId())
                 return false;//return "单词已经存在";
         }
+
         userVocabsEntity.addVocabs(vocabEntity);
         userVocabsEntity.setVocabs(vocabEntityList);
         userVocabsRepository.save(userVocabsEntity);
@@ -638,7 +686,7 @@ public class UserController {
                 return false;
         }else
             return false;
-        if(userAddVocab(userId,newUserVocabType) == true)
+        if(userAddVocab(userId,newUserVocabType))
         {
             if(type == 2)
             {

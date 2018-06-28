@@ -15,7 +15,8 @@ public class UserDailyLearning {
     private long newVocab;
     private Calendar today;
 
-    public UserDailyLearning() { }
+    public UserDailyLearning() {
+    }
     public UserDailyLearning(@NotNull UserDailyLearningEntity userDailyLearningEntity){
         id = userDailyLearningEntity.getId();
         UserEntity userEntity = userDailyLearningEntity.getUser();
