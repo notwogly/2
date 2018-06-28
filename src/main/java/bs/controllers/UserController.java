@@ -550,6 +550,35 @@ public class UserController {
         return new Vocab(vocabEntity);
     }
 
+    //用户从learning单词库中随机获取一个获取单词的细节
+    @GetMapping("/getLearningVocabDetail/{userId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    public Vocab getLearningVocabDetail(@PathVariable Integer userId){
+        UserDailyLearning userDailyLearning = getDailyLearning(userId);
+        if(userDailyLearning == null)
+            return null;
+        else if(userDailyLearning.getNewVocab() == 0)
+            return null;
+
+        UserEntity userEntity = null;
+        try {
+            userEntity = userRepository.findById(userId).get();
+        }
+        catch (Exception e){}
+        if(userEntity == null)
+            return null;
+        UserVocabsEntity userVocabsEntity = null;
+        try{
+            userVocabsEntity = userVocabsRepository.findByTypeAndUser(3,userEntity);
+        }catch (Exception e){}
+        List<VocabEntity> vocabEntityList = userVocabsEntity.getVocabs();
+        if(vocabEntityList.size() == 0)
+            return null;
+        VocabEntity vocabEntity = vocabEntityList.get(0);
+
+        return new Vocab(vocabEntity);
+    }
+
     //将单词添加进用户的单词库
     @PostMapping("/addVocab/{userId}")
     @ResponseStatus(value = HttpStatus.CREATED)

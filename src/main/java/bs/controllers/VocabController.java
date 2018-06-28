@@ -39,6 +39,20 @@ public class VocabController {
         return vocabList;
     }
 
+    @GetMapping("/getVocabDetail/{vocabId}")
+    @ResponseStatus(value = HttpStatus.CREATED)
+    public Vocab getVocabs(@PathVariable Integer vocabId){
+        VocabEntity vocabEntity = null;
+        try {
+            vocabEntity = vocabRepository.findById(vocabId).get();
+        }
+        catch (Exception e){}
+        if(vocabEntity == null)
+            return  null;
+
+        return new Vocab(vocabEntity);
+    }
+
     @PostMapping("/add")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
     public void addVocab(@RequestBody Vocab vocab){
