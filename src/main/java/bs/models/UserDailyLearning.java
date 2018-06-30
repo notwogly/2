@@ -13,6 +13,9 @@ public class UserDailyLearning {
     private long learning;
     private long mastered;
     private long newVocab;
+    private int year;
+    private int month;
+    private int  day;
     private Calendar today;
 
     public UserDailyLearning() {
@@ -26,6 +29,9 @@ public class UserDailyLearning {
         mastered = userDailyLearningEntity.getMastered();
         newVocab = userDailyLearningEntity.getNewVocab();
         today = userDailyLearningEntity.getToday();
+        year = today.get(Calendar.YEAR);
+        month = today.get(Calendar.MONTH);
+        day = today.get(Calendar.DAY_OF_MONTH);
     }
 
     public Integer getId() {
@@ -49,6 +55,25 @@ public class UserDailyLearning {
         this.today = today;
     }
 
+    public int getDay() {
+        return day;
+    }
+    public int getMonth() {
+        return month;
+    }
+    public int getYear() {
+        return year;
+    }
+    public void setDay(int day) {
+        this.day = day;
+    }
+    public void setMonth(int month) {
+        this.month = month;
+    }
+    public void setYear(int year) {
+        this.year = year;
+    }
+
     public void setMastered(long mastered) {
         this.mastered = mastered;
     }
@@ -58,6 +83,7 @@ public class UserDailyLearning {
     public void setLearning(long learning) {
         this.learning = learning;
     }
+
     public long getMastered() {
         return mastered;
     }

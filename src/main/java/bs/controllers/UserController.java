@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Random;
 
 @RestController
 @RequestMapping("/user")
@@ -304,6 +305,35 @@ public class UserController {
         return new UserDailyLearning(userDailyLearningEntity);
     }
 
+    //用户获取本月的学习情况
+    @GetMapping("/getMonthDailyLearning/{userId}")
+    @ResponseStatus(value = HttpStatus.OK)
+    public List<UserDailyLearning> getMonthDailyLearning(@PathVariable Integer userId){
+        Calendar now = Calendar.getInstance();
+        UserEntity userEntity = null;
+        try {
+            userEntity = userRepository.findById(userId).get();
+        }
+        catch (Exception e){}
+        if(userEntity == null)
+            return null;
+        List<UserDailyLearningEntity> userDailyLearningEntityList = null;
+        try{
+            userDailyLearningEntityList = userDailyLearningRepository.findByUser(userEntity);
+        }catch (Exception e){}
+        if(userDailyLearningEntityList == null)
+            return null;
+        List<UserDailyLearning> userDailyLearningList =new ArrayList<>();
+        for(UserDailyLearningEntity userDailyLearningEntity: userDailyLearningEntityList) {
+            if ((now.get(Calendar.YEAR) == userDailyLearningEntity.getToday().get(Calendar.YEAR))
+                    && (now.get(Calendar.MONTH) == userDailyLearningEntity.getToday().get(Calendar.MONTH))) {
+                userDailyLearningList.add(new UserDailyLearning(userDailyLearningEntity));
+            }
+        }
+
+        return userDailyLearningList;
+    }
+
     //用户增加在学习的书籍
     @PostMapping("/addBook/{userId}/{bookId}")
     @ResponseStatus(value = HttpStatus.CREATED)
@@ -485,6 +515,42 @@ public class UserController {
         return vocabList;
     }
 
+    //用户获取需要考核的单词
+    @GetMapping("/getCheckVocab")
+    @ResponseStatus(value = HttpStatus.OK)
+    public Check getCheckVocabs(){
+        List<VocabEntity> vocabEntityList = null;
+        try{
+            vocabEntityList = vocabRepository.findAll();
+        }catch (Exception e){}
+        if(vocabEntityList == null)
+            return null;
+        VocabEntity vocabEntity = null;
+        if(vocabEntityList.size() == 1)
+            vocabEntity = vocabEntityList.get(0);
+        else
+        {
+            Random random = new Random();
+            int num = Math.abs(random.nextInt(vocabEntityList.size())-1);
+            vocabEntity = vocabEntityList.get(num);
+        }
+        List<VocabEntity> vocabEntityList1 = new ArrayList<>();
+        Random random = new Random();
+        for(int i = 0; i< 3; i++)
+        {
+            Integer num = Math.abs(random.nextInt(vocabEntityList.size())-1);
+            if(num != vocabEntity.getId())
+                vocabEntityList1.add(vocabEntityList.get(num));
+            else
+                i--;
+        }
+        if(vocabEntityList1.size() != 3)
+            return  null;
+
+        //return  null;
+        return new Check(vocabEntity, vocabEntityList1);
+    }
+
     //清空用户的单词库
     @DeleteMapping("/clearVocabs/{userId}")
     @ResponseStatus(value = HttpStatus.NO_CONTENT)
@@ -545,7 +611,17 @@ public class UserController {
         List<VocabEntity> vocabEntityList = userVocabsEntity.getVocabs();
         if(vocabEntityList.size() == 0)
             return null;
-        VocabEntity vocabEntity = vocabEntityList.get(0);
+        VocabEntity vocabEntity = null;
+        if(vocabEntityList.size() == 1)
+            vocabEntity = vocabEntityList.get(0);
+        else
+        {
+            Random random = new Random();
+            int num = Math.abs(random.nextInt(vocabEntityList.size())-1);
+//            System.out.println(num);
+//            System.out.println(vocabEntityList.size());
+            vocabEntity = vocabEntityList.get(num);
+        }
 
         return new Vocab(vocabEntity);
     }
@@ -574,7 +650,15 @@ public class UserController {
         List<VocabEntity> vocabEntityList = userVocabsEntity.getVocabs();
         if(vocabEntityList.size() == 0)
             return null;
-        VocabEntity vocabEntity = vocabEntityList.get(0);
+        VocabEntity vocabEntity = null;
+        if(vocabEntityList.size() == 1)
+            vocabEntity = vocabEntityList.get(0);
+        else
+        {
+            Random random = new Random();
+            int num = Math.abs(random.nextInt(vocabEntityList.size())-1);
+            vocabEntity = vocabEntityList.get(num);
+        }
 
         return new Vocab(vocabEntity);
     }

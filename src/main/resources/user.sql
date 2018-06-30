@@ -1,0 +1,1 @@
+INSERT INTO bs.user (id, email, gender, hashed_pwd, intro, record_day, salt, username) VALUES (1, 'root', 'male', 'ONUm48BObYbm314ZJ28ZvcmZ5WOk7VXlK5TuHRRdsRY=', '我爱背单词...', 2, '1IPpWqvA5m2QIcqTPwwREw==', 'root');

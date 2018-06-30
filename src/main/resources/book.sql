@@ -1,0 +1,2 @@
+INSERT INTO bs.books (id, book_intro, book_name, total_vocab_number) VALUES (1, '这是桂凌云创建的单词书', '桂凌云的单词书', 30);
+INSERT INTO bs.books (id, book_intro, book_name, total_vocab_number) VALUES (2, '这是一本只包含简易四级单词内容的书', '简易四级单词', 20);
